@@ -1,0 +1,716 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="description" content="КДП-Контроль — система контроля кадровых процессов в 1С: приказы, трудовые договоры и допсоглашения без ручного ввода, контрольные точки и отчёт о состоянии кадровой базы.">
+<meta property="og:title" content="КДП-Контроль — контроль кадровых процессов в 1С">
+<meta property="og:description" content="КДП, в котором ошибки выявляются до того, как становятся проблемой. Бесплатная экспресс-диагностика КДП.">
+<meta property="og:type" content="website">
+<style>html{-webkit-text-size-adjust:100%}body{margin:0}img{max-width:100%}[hidden]{display:none!important}</style>
+<title>КДП-Контроль</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Unbounded:wght@500;700&family=Golos+Text:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+/* Layout: кадровый бланк — поля-метки моноширинным шрифтом, синяя «печать» как единственный акцент, один живой макет 1С в первом экране */
+:root{
+  --paper:#F5F7FB; --surface:#FFFFFF; --ink:#14213D; --muted:#56637D; --line:#D8DFEB;
+  --seal:#1D4ED8; --seal-soft:rgba(29,78,216,.09); --ok:#17804F; --warn:#A8680F; --bad:#B8362F;
+  --f-display:"Unbounded","Golos Text",system-ui,sans-serif;
+  --f-body:"Golos Text",system-ui,-apple-system,"Segoe UI",sans-serif;
+  --f-mono:"IBM Plex Mono",ui-monospace,Menlo,Consolas,monospace;
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+  --paper:#0D1424; --surface:#141D31; --ink:#E5EBF6; --muted:#9BA8C1; --line:#25314B;
+  --seal:#7C9CFF; --seal-soft:rgba(124,156,255,.12); --ok:#4CC38A; --warn:#E2A54A; --bad:#F06B62; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --paper:#0D1424; --surface:#141D31; --ink:#E5EBF6; --muted:#9BA8C1; --line:#25314B;
+  --seal:#7C9CFF; --seal-soft:rgba(124,156,255,.12); --ok:#4CC38A; --warn:#E2A54A; --bad:#F06B62; color-scheme:dark}
+
+*{box-sizing:border-box}
+body{background:var(--paper);color:var(--ink);font-family:var(--f-body);font-size:17px;line-height:1.6;padding-inline:20px;padding-block:0}
+.wrap{max-width:1080px;margin-inline:auto}
+h1,h2,h3{font-family:var(--f-display);font-weight:700;line-height:1.15;text-wrap:balance;margin:0}
+h1{font-size:clamp(30px,5vw,52px);letter-spacing:-.01em}
+h2{font-size:clamp(24px,3.4vw,34px)}
+h3{font-size:18px;font-family:var(--f-body);font-weight:600}
+p{margin:0}
+.label{font-family:var(--f-mono);font-size:12px;letter-spacing:.12em;text-transform:uppercase;color:var(--muted)}
+.lead{font-size:clamp(18px,2vw,20px);color:var(--muted);max-width:60ch}
+section{padding-block:72px;border-top:1px solid var(--line);display:grid;gap:32px}
+.sec-head{display:grid;gap:12px;max-width:760px}
+a{color:var(--seal)}
+:focus-visible{outline:2px solid var(--seal);outline-offset:3px;border-radius:4px}
+
+/* top bar */
+.top{display:flex;justify-content:space-between;align-items:center;gap:16px;padding-block:20px;flex-wrap:wrap}
+.brand{font-family:var(--f-display);font-weight:700;font-size:16px}
+.brand span{color:var(--seal)}
+.btn{display:inline-flex;align-items:center;gap:8px;font:600 16px/1 var(--f-body);padding:16px 22px;border-radius:10px;border:1.5px solid var(--seal);text-decoration:none;cursor:pointer;transition:transform .15s,background .15s}
+.btn-primary{background:var(--seal);color:var(--paper)}
+.btn-ghost{background:transparent;color:var(--seal)}
+.btn:hover{transform:translateY(-1px)}
+.btn-sm{padding:10px 14px;font-size:14px}
+
+/* hero */
+.hero{display:grid;grid-template-columns:1.05fr .95fr;gap:48px;align-items:center;padding-block:40px 80px}
+.hero-text{display:grid;gap:24px;min-width:0}
+.promise{display:grid;gap:10px;margin:0;padding:0;list-style:none}
+.promise li{display:grid;grid-template-columns:22px 1fr;gap:10px;align-items:start}
+.tick{width:22px;height:22px;border-radius:50%;background:var(--seal-soft);color:var(--seal);display:grid;place-items:center;font-size:13px;font-weight:700;margin-top:3px}
+.cta-row{display:flex;gap:12px;flex-wrap:wrap}
+
+/* 1C mock */
+.mock{position:relative;background:var(--surface);border:1px solid var(--line);border-radius:14px;box-shadow:0 20px 50px -24px rgba(20,33,61,.35);overflow:hidden;min-width:0}
+.mock-bar{display:flex;align-items:center;gap:8px;padding:10px 14px;border-bottom:1px solid var(--line);font:500 13px var(--f-mono);color:var(--muted)}
+.mock-bar i{width:10px;height:10px;border-radius:50%;background:var(--line);display:inline-block}
+.mock-body{padding:20px;display:grid;gap:16px}
+.doc-title{font:600 17px var(--f-body)}
+.fields{display:grid;grid-template-columns:auto 1fr;gap:6px 14px;font-size:14px}
+.fields dt{font:400 12px var(--f-mono);color:var(--muted);text-transform:uppercase;letter-spacing:.06em;padding-top:2px}
+.fields dd{margin:0;font-weight:500}
+.checks{list-style:none;margin:0;padding:12px 14px;border-radius:10px;background:var(--paper);font:400 13px/1.7 var(--f-mono);display:grid}
+.checks li{display:flex;gap:8px}
+.ok{color:var(--ok)} .warn{color:var(--warn)} .bad{color:var(--bad)}
+.stamp{position:absolute;right:18px;bottom:22px;transform:rotate(-9deg);border:2.5px solid var(--seal);color:var(--seal);font:700 14px var(--f-display);letter-spacing:.08em;padding:8px 14px;border-radius:8px;opacity:.85;animation:stamp .5s .9s both}
+@keyframes stamp{from{transform:rotate(-9deg) scale(1.6);opacity:0}to{transform:rotate(-9deg) scale(1);opacity:.85}}
+.checks li{animation:line .35s both}
+.checks li:nth-child(1){animation-delay:.15s}.checks li:nth-child(2){animation-delay:.3s}.checks li:nth-child(3){animation-delay:.45s}.checks li:nth-child(4){animation-delay:.6s}
+@keyframes line{from{opacity:.25}to{opacity:1}}
+
+/* pains */
+.pains{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:12px;list-style:none;margin:0;padding:0}
+.pains li{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:18px 18px 18px 50px;position:relative}
+.pains li::before{content:"✕";position:absolute;left:18px;top:18px;color:var(--bad);font-weight:700}
+.verdict{border-left:3px solid var(--seal);padding:4px 0 4px 20px;font-size:19px;max-width:62ch}
+.verdict b{font-weight:600}
+
+/* flow */
+.flow{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:12px;counter-reset:s;list-style:none;margin:0;padding:0}
+.flow li{counter-increment:s;background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:16px;display:grid;gap:6px;align-content:start}
+.flow li::before{content:counter(s);font:500 12px var(--f-mono);color:var(--muted)}
+.flow li b{font-weight:600}
+.flow li span{font-size:14px;color:var(--muted)}
+.flow li.human{border:2px solid var(--seal);background:var(--seal-soft)}
+.flow li.human::after{content:"единственный ручной шаг";font:500 11px var(--f-mono);text-transform:uppercase;letter-spacing:.06em;color:var(--seal)}
+
+/* tables */
+.tbl-wrap{overflow-x:auto;border:1px solid var(--line);border-radius:12px;background:var(--surface)}
+table{border-collapse:collapse;width:100%;min-width:560px;font-size:15px}
+th,td{text-align:left;padding:14px 16px;border-bottom:1px solid var(--line);vertical-align:top}
+th{font:500 12px var(--f-mono);text-transform:uppercase;letter-spacing:.08em;color:var(--muted);background:var(--paper)}
+tr:last-child td{border-bottom:0}
+td.before{color:var(--muted)}
+td.after{font-weight:500}
+td.after::before{content:"✓ ";color:var(--ok);font-weight:700}
+
+/* features */
+.feat{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:24px}
+.feat div{display:grid;gap:6px;align-content:start}
+.feat p{color:var(--muted);font-size:15px}
+
+/* calculator */
+.calc{display:grid;grid-template-columns:1fr 1fr;gap:32px;background:var(--surface);border:1px solid var(--line);border-radius:16px;padding:28px}
+.calc-in{display:grid;gap:22px;min-width:0}
+.calc label{display:flex;justify-content:space-between;gap:12px;font-weight:500}
+.calc output{font:500 16px var(--f-mono);color:var(--seal)}
+input[type=range]{width:100%;accent-color:var(--seal)}
+.calc-out{display:grid;gap:14px;align-content:center;border-left:1px solid var(--line);padding-left:32px;min-width:0}
+.big{font:700 clamp(36px,5vw,52px)/1 var(--f-display);color:var(--seal);font-variant-numeric:tabular-nums}
+.calc-out .row{display:flex;justify-content:space-between;gap:12px;font-size:15px;color:var(--muted);border-top:1px solid var(--line);padding-top:10px}
+.calc-out .row b{color:var(--ink);font-family:var(--f-mono);font-weight:500}
+.note{font-size:13px;color:var(--muted)}
+
+/* about */
+.about{display:grid;grid-template-columns:auto 1fr;gap:32px;align-items:start}
+.years{font:700 clamp(64px,10vw,110px)/.9 var(--f-display);color:var(--seal)}
+.years small{display:block;font:500 13px var(--f-mono);letter-spacing:.1em;text-transform:uppercase;color:var(--muted);margin-top:10px}
+.about ul{margin:12px 0 0;padding-left:20px;display:grid;gap:6px}
+
+/* pricing */
+.plans{display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:14px}
+.plan{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:22px;display:grid;gap:10px;grid-template-rows:auto auto 1fr auto;min-width:0}
+.plan.pick{border:2px solid var(--seal)}
+.plan .tag{font:500 11px var(--f-mono);text-transform:uppercase;letter-spacing:.08em;color:var(--seal)}
+.price{font:700 24px var(--f-display);font-variant-numeric:tabular-nums}
+.plan p{font-size:14px;color:var(--muted)}
+.plan .term{font:400 13px var(--f-mono);color:var(--muted);border-top:1px solid var(--line);padding-top:10px}
+.safe{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:12px;list-style:none;margin:0;padding:0}
+.safe li{display:grid;grid-template-columns:22px 1fr;gap:10px;font-size:15px}
+.offer{background:var(--seal);color:var(--paper);border-radius:14px;padding:22px 26px;display:flex;justify-content:space-between;align-items:center;gap:16px;flex-wrap:wrap}
+.offer b{font-family:var(--f-display);font-size:20px}
+
+/* cta */
+.final{text-align:left;background:var(--surface);border:1px solid var(--line);border-radius:18px;padding:40px;display:grid;gap:20px}
+.steps{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:16px;list-style:none;margin:0;padding:0;counter-reset:st}
+.steps li{counter-increment:st;display:grid;gap:4px;font-size:15px;color:var(--muted)}
+.steps li::before{content:"Шаг " counter(st);font:500 12px var(--f-mono);text-transform:uppercase;letter-spacing:.08em;color:var(--seal)}
+.steps b{color:var(--ink)}
+.phone{display:flex;align-items:center;gap:12px;flex-wrap:wrap}
+.phone-num{font:700 clamp(22px,3.4vw,30px) var(--f-display);user-select:all;font-variant-numeric:tabular-nums}
+footer{padding-block:40px 56px;color:var(--muted);font-size:14px;display:flex;justify-content:space-between;gap:16px;flex-wrap:wrap;border-top:1px solid var(--line);margin-top:72px}
+
+@media (max-width:820px){
+  .hero{grid-template-columns:1fr;gap:36px}
+  .calc{grid-template-columns:1fr}
+  .calc-out{border-left:0;padding-left:0;border-top:1px solid var(--line);padding-top:24px}
+  .about{grid-template-columns:1fr}
+  section{padding-block:56px}
+  .final{padding:26px}
+}
+@media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+
+/* question hook */
+.ask{background:var(--surface);border:1px solid var(--line);border-left:4px solid var(--seal);border-radius:12px;padding:26px 28px;display:grid;gap:8px}
+.ask p{font:700 clamp(20px,2.6vw,26px)/1.3 var(--f-display);text-wrap:balance}
+.ask span{color:var(--muted)}
+
+/* self-check */
+.quiz{display:grid;grid-template-columns:1.2fr .8fr;gap:24px;align-items:start}
+.quiz-list{list-style:none;margin:0;padding:0;display:grid;gap:10px;min-width:0}
+.quiz-list label{display:flex;gap:14px;align-items:flex-start;background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:16px 18px;cursor:pointer;transition:border-color .15s,background .15s}
+.quiz-list input{width:20px;height:20px;accent-color:var(--seal);margin-top:3px;flex:none}
+.quiz-list label:has(input:checked){border-color:var(--seal);background:var(--seal-soft)}
+.quiz-res{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:24px;display:grid;gap:10px;position:sticky;top:calc(env(safe-area-inset-top,0px) + 16px)}
+.quiz-score{font:700 48px/1 var(--f-display);font-variant-numeric:tabular-nums}
+.quiz-score small{font:500 16px var(--f-mono);color:var(--muted)}
+.meter{height:8px;border-radius:4px;background:var(--line);overflow:hidden}
+.meter i{display:block;height:100%;width:0;background:var(--seal);transition:width .3s}
+.quiz-res[data-level="hi"] .meter i{background:var(--bad)}
+.quiz-res[data-level="mid"] .meter i{background:var(--warn)}
+
+/* demo */
+.demo{display:grid;grid-template-columns:300px 1fr;gap:20px;align-items:start}
+.samples{display:grid;gap:10px;min-width:0}
+.sample{text-align:left;font:inherit;color:inherit;background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:14px 16px;cursor:pointer;display:grid;gap:4px}
+.sample b{font-weight:600}
+.sample span{font-size:13px;color:var(--muted)}
+.sample[aria-pressed="true"]{border:2px solid var(--seal);background:var(--seal-soft)}
+.paper{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:18px;font-size:14px;line-height:1.55;display:grid;gap:8px}
+.paper .label{font-size:11px}
+.paper p mark{background:transparent;color:inherit}
+.paper.parsed p mark{background:var(--seal-soft);color:var(--seal);border-radius:3px;padding:0 2px}
+.stage{background:var(--surface);border:1px solid var(--line);border-radius:14px;overflow:hidden;min-width:0}
+.stage-bar{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:12px 16px;border-bottom:1px solid var(--line);flex-wrap:wrap}
+.stage-bar .mono{font:500 13px var(--f-mono);color:var(--muted)}
+.steps-run{display:flex;gap:6px;flex-wrap:wrap;list-style:none;margin:0;padding:12px 16px;border-bottom:1px solid var(--line);font:500 12px var(--f-mono)}
+.steps-run li{padding:6px 10px;border-radius:20px;border:1px solid var(--line);color:var(--muted)}
+.steps-run li.on{border-color:var(--seal);color:var(--seal)}
+.steps-run li.done{background:var(--seal);border-color:var(--seal);color:var(--surface)}
+.stage-body{padding:18px;display:grid;gap:18px;min-height:340px}
+.idle{display:grid;place-items:center;text-align:center;color:var(--muted);gap:12px;padding:40px 10px}
+.idle b{color:var(--ink);font-size:18px}
+.res-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+.res-grid>div{min-width:0}
+.box-title{font:500 11px var(--f-mono);text-transform:uppercase;letter-spacing:.08em;color:var(--muted);margin-bottom:8px}
+.res-fields{display:grid;grid-template-columns:auto 1fr;gap:6px 12px;font-size:14px;margin:0}
+.res-fields dt{color:var(--muted)}
+.res-fields dd{margin:0;font-weight:500}
+.res-checks{list-style:none;margin:0;padding:0;display:grid;gap:6px;font-size:14px}
+.res-checks li{display:grid;grid-template-columns:18px 1fr;gap:8px}
+.fix{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px}
+.tabs{display:flex;gap:4px;flex-wrap:wrap;border-bottom:1px solid var(--line)}
+.tab{font:500 14px var(--f-body);color:var(--muted);background:none;border:0;border-bottom:2px solid transparent;padding:8px 12px;cursor:pointer}
+.tab[aria-selected="true"]{color:var(--seal);border-bottom-color:var(--seal)}
+.docview{background:var(--paper);border:1px solid var(--line);border-radius:10px;padding:22px;font-family:"Times New Roman",Georgia,serif;font-size:15px;line-height:1.55;display:grid;gap:10px}
+.docview h4{margin:0;text-align:center;font:700 15px "Times New Roman",Georgia,serif;letter-spacing:.04em}
+.docview .meta{display:flex;justify-content:space-between;font-size:14px}
+.docview .sign{display:flex;justify-content:space-between;margin-top:8px}
+.done-line{display:flex;align-items:center;gap:12px;flex-wrap:wrap;font-weight:500}
+.done-line .seal{border:2px solid var(--seal);color:var(--seal);font:700 12px var(--f-display);letter-spacing:.08em;padding:6px 10px;border-radius:6px;transform:rotate(-4deg)}
+@media (max-width:820px){.demo,.quiz,.res-grid{grid-template-columns:1fr}.quiz-res{position:static}}
+
+/* KDP-Control additions */
+.health .mock-body{gap:14px}
+.h-top{display:flex;justify-content:space-between;align-items:flex-end;gap:12px}
+.h-big{font:700 48px/1 var(--f-display);color:var(--bad);font-variant-numeric:tabular-nums}
+.h-ok{font-size:13px;color:var(--muted);text-align:right}
+.h-ok b{color:var(--ink);font-family:var(--f-mono);font-weight:500}
+.h-list{list-style:none;margin:0;padding:0;display:grid;gap:6px;font-size:14px}
+.h-list li{display:grid;grid-template-columns:34px 1fr;align-items:center;gap:10px;padding:8px 10px;border:1px solid var(--line);border-radius:8px;background:var(--paper)}
+.h-list .n{font:600 14px var(--f-mono);text-align:center;border-radius:6px;padding:2px 0;color:var(--surface)}
+.h-list .n.warn{background:var(--warn)} .h-list .n.bad{background:var(--bad)}
+.loss{list-style:none;margin:0;padding:0;display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:12px;counter-reset:l}
+.loss li{counter-increment:l;background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:18px;display:grid;gap:6px;align-content:start}
+.loss li::before{content:counter(l);font:700 22px var(--f-display);color:var(--seal)}
+.loss li b{font-weight:600}
+.loss li span{font-size:14px;color:var(--muted)}
+.chains{display:grid;gap:10px}
+.chain{display:grid;grid-template-columns:140px 1fr;gap:14px;align-items:center;background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:14px 16px}
+.chain>b{font:700 15px var(--f-display)}
+.chain ol{list-style:none;margin:0;padding:0;display:flex;flex-wrap:wrap;gap:6px 0;min-width:0}
+.chain li{font-size:13px;padding:5px 10px;border-radius:20px;background:var(--seal-soft);color:var(--ink)}
+.chain li+li::before{content:"→";color:var(--muted);margin:0 8px 0 -2px}
+.chain li+li{background:none;padding-left:4px}
+.chain li+li{display:inline-flex;align-items:center}
+.zones{display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:1px;background:var(--line);border:1px solid var(--line);border-radius:12px;overflow:hidden}
+.zones div{background:var(--surface);padding:18px;display:grid;gap:6px;align-content:start}
+.zones b{font-weight:600}
+.zones span{font-size:14px;color:var(--muted)}
+.feat.four{grid-template-columns:repeat(auto-fit,minmax(200px,1fr))}
+@media (max-width:820px){.chain{grid-template-columns:1fr}}
+</style>
+
+</head>
+<body>
+<div class="wrap">
+  <header class="top">
+    <div class="brand">КДП<span>-Контроль</span></div>
+    <div class="cta-row">
+      <a class="btn btn-ghost btn-sm" href="#try">Демо</a>
+      <a class="btn btn-primary btn-sm" href="#contact">Экспресс-диагностика</a>
+    </div>
+  </header>
+
+  <div class="hero">
+    <div class="hero-text">
+      <div class="label">Система контроля кадровых процессов в 1С</div>
+      <h1>КДП, в котором ошибки выявляются до того, как становятся проблемой</h1>
+      <p class="lead">Контроль кадровых документов, штатного расписания, отпусков, табелей и кадровых событий прямо в вашей 1С — с автоматическим формированием документов и контрольными точками на каждом этапе.</p>
+      <div class="label">Что получает руководитель КДП</div>
+      <ul class="promise">
+        <li><span class="tick">✓</span><span>Меньше ручных операций и повторного ввода</span></li>
+        <li><span class="tick">✓</span><span>Исключены ошибки ручного набора: приказы формируются из данных 1С, а не печатаются вручную в Word</span></li>
+        <li><span class="tick">✓</span><span>Контроль обязательных документов и допсоглашений</span></li>
+        <li><span class="tick">✓</span><span>Несоответствия видны до подписания и проведения</span></li>
+        <li><span class="tick">✓</span><span>Прозрачная картина состояния кадровой базы</span></li>
+        <li><span class="tick">✓</span><span>Меньше зависимости от конкретного кадровика</span></li>
+      </ul>
+      <div class="cta-row">
+        <a class="btn btn-primary" href="#contact">Бесплатная экспресс-диагностика</a>
+        <a class="btn btn-ghost" href="#try">Попробовать демо</a>
+      </div>
+    </div>
+
+    <div class="mock health" aria-label="Пример отчёта «Здоровье кадровой базы»">
+      <div class="mock-bar"><i></i><i></i><i></i>&nbsp;Здоровье кадровой базы · пример</div>
+      <div class="mock-body">
+        <div class="h-top"><div><div class="label">Требует внимания</div><div class="h-big">13</div></div><div class="h-ok"><b>412</b> сотрудников<br><b>38</b> событий за месяц</div></div>
+        <ul class="h-list">
+          <li><span class="n warn">3</span>Незакрытых кадровых события</li>
+          <li><span class="n bad">2</span>Перевода без допсоглашения</li>
+          <li><span class="n warn">1</span>Несоответствие штатному расписанию</li>
+          <li><span class="n bad">4</span>Документа не внесены в ЕСУТД</li>
+          <li><span class="n warn">1</span>Превышение остатка отпуска</li>
+          <li><span class="n warn">2</span>Расхождения табеля с приказами</li>
+        </ul>
+        <p class="note">Каждая строка открывает список сотрудников и документов: что не так и что сделать.</p>
+      </div>
+    </div>
+  </div>
+
+  <div class="ask">
+    <p>Мы переводим экспертизу кадровика из его головы в систему.</p>
+    <span>И она остаётся в компании, даже когда меняются люди.</span>
+  </div>
+
+  <section>
+    <div class="sec-head">
+      <div class="label">Риски</div>
+      <h2>Где КДП чаще всего теряет контроль</h2>
+    </div>
+    <ol class="loss">
+      <li><b>Кадровые документы</b><span>Данные переносятся вручную: служебка → приказ → трудовой договор.</span></li>
+      <li><b>Изменение условий</b><span>Перевод или новый оклад есть, а допсоглашение не оформлено.</span></li>
+      <li><b>Штатное расписание</b><span>Данные приказа не соответствуют утверждённой штатной структуре.</span></li>
+      <li><b>Отпуска и рабочее время</b><span>Расхождения находятся уже при закрытии периода.</span></li>
+      <li><b>ЕСУТД</b><span>Документ есть в 1С, но контроль его внесения остаётся ручным.</span></li>
+    </ol>
+    <p class="verdict"><b>Мы не заставляем кадровика работать внимательнее. Мы встраиваем контроль в сам процесс.</b></p>
+  </section>
+
+  <section>
+    <div class="sec-head">
+      <div class="label">Независимость от людей</div>
+      <h2>КДП не должно держаться на памяти одного человека</h2>
+      <p class="lead">Опытный кадровик уходит в отпуск или увольняется — и вместе с ним уходят контрольные точки, которые держались у него в голове. КДП-Контроль фиксирует правила внутри процесса.</p>
+    </div>
+    <div class="feat">
+      <div><h3>Новичок входит быстрее</h3><p>Система сама подсказывает, что проверить на каждом шаге.</p></div>
+      <div><h3>Единые правила</h3><p>Весь отдел оформляет документы одинаково.</p></div>
+      <div><h3>Контроль остаётся</h3><p>Он не исчезает вместе с уходом сотрудника.</p></div>
+    </div>
+  </section>
+
+  <section>
+    <div class="about">
+      <div class="years">19<small>лет практики в HR</small></div>
+      <div class="sec-head">
+        <div class="label">Почему нам можно доверять</div>
+        <h2>Это не автоматизация от программистов, изучивших КДП по техзаданию</h2>
+        <p>Решение создано специалистом с 19-летней практикой в HR: КДП по нескольким юрлицам, руководство отделом оплаты труда, C&amp;B, 1С:ЗУП, КЭДО, ЕСУТД, ФОТ, вахтовый и суммированный учёт, внедрение HRMS в международной компании. Нефтегаз, горнодобыча, производство.</p>
+        <p><b>Поэтому система контролирует не только наличие документа, но и кадровую логику процесса.</b></p>
+      </div>
+    </div>
+  </section>
+
+  <section>
+    <div class="sec-head">
+      <div class="label">Контрольные точки КДП</div>
+      <h2>Встроены в 1С на каждом кадровом событии</h2>
+      <p class="lead">Система проверяет не только наличие документа, но и взаимосвязь данных. Документ с нарушением не проводится без решения ответственного.</p>
+    </div>
+    <div class="chains">
+      <div class="chain"><b>Приём</b><ol><li>Основание</li><li>Свободная штатная единица</li><li>Вилка оклада</li><li>Нет дубля физлица</li><li>Условия трудового договора</li><li>ЕСУТД</li></ol></div>
+      <div class="chain"><b>Перевод</b><ol><li>Основание</li><li>Должность в штатном</li><li>Изменение условий</li><li>Нужно ли допсоглашение</li><li>Оформлено ли оно</li><li>ЕСУТД</li></ol></div>
+      <div class="chain"><b>Отпуск</b><ol><li>Рабочий год</li><li>Остаток дней</li><li>Дополнительные дни</li><li>График отпусков</li><li>Пересечения</li><li>Табель</li></ol></div>
+      <div class="chain"><b>Командировка</b><ol><li>Основание</li><li>Пересечения с отпуском и больничным</li><li>Табель</li></ol></div>
+      <div class="chain"><b>Больничный</b><ol><li>Лист нетрудоспособности</li><li>Пересечения</li><li>Табель</li></ol></div>
+      <div class="chain"><b>Увольнение</b><ol><li>Основание и статья ТК РК</li><li>Открытые отпуска и командировки</li><li>Компенсация за отпуск</li><li>ЕСУТД</li></ol></div>
+    </div>
+    <p class="note">Приказы, трудовые договоры и допсоглашения при этом формируются автоматически — на казахском и русском, по шаблонам компании.</p>
+  </section>
+
+  <section>
+    <div class="sec-head">
+      <div class="label">Зоны контроля</div>
+      <h2>Что система контролирует вместо кадровика</h2>
+    </div>
+    <div class="zones">
+      <div><b>Кадровые события</b><span>Приём, перевод, перемещение, отпуск, командировка, больничный, увольнение</span></div>
+      <div><b>Документы</b><span>Приказы, договоры, допсоглашения: наличие, полнота, соответствие данным</span></div>
+      <div><b>Штатное расписание</b><span>Должность, ставка, оклад, подразделение; загрузка из Excel с проверкой</span></div>
+      <div><b>Отпуска</b><span>Остатки, рабочие годы, пересечения, дополнительные отпуска</span></div>
+      <div><b>Табели</b><span>Соответствие графику и кадровым событиям</span></div>
+      <div><b>Суммированный учёт и вахта</b><span>Факт против нормы учётного периода, графики, переработка</span></div>
+      <div><b>ЕСУТД</b><span>Документы, которые ещё не внесены</span></div>
+      <div><b>Данные</b><span>Дубли, несоответствия, пропуски обязательных полей</span></div>
+    </div>
+  </section>
+
+  <section id="try">
+    <div class="sec-head">
+      <div class="label">Демо · попробуйте сами</div>
+      <h2>Выберите документ и загрузите его в 1С</h2>
+      <p class="lead">Это демонстрация на примерах. В настоящей системе вы загружаете свой файл, а документы печатаются по вашим шаблонам.</p>
+    </div>
+    <div class="demo">
+      <div class="samples" id="samples">
+        <button class="sample" type="button" data-k="hire" aria-pressed="true"><b>Служебка на приём</b><span>Инженер ПТО, с 03.11.2026</span></button>
+        <button class="sample" type="button" data-k="vac" aria-pressed="false"><b>Заявление на отпуск</b><span>24 дня — а остаток меньше</span></button>
+        <button class="sample" type="button" data-k="move" aria-pressed="false"><b>Служебка на перевод</b><span>Новая должность и оклад</span></button>
+        <div class="paper" id="paper"></div>
+        <button class="btn btn-primary" type="button" id="run">Загрузить в 1С</button>
+      </div>
+      <div class="stage">
+        <div class="stage-bar"><span class="mono">1С:ЗУП · КДП-Контроль</span><span class="mono" id="timer"></span></div>
+        <ul class="steps-run" id="stepsRun">
+          <li>1 Загрузка</li><li>2 Распознавание</li><li>3 Проверки</li><li>4 Документы</li>
+        </ul>
+        <div class="stage-body" id="stageBody">
+          <div class="idle"><b>Здесь появится результат</b><span>Выберите пример слева и нажмите «Загрузить в 1С»</span></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  
+
+  <section>
+    <div class="sec-head">
+      <div class="label">Как меняется работа кадровика</div>
+      <h2>Из семи шагов человек делает один</h2>
+    </div>
+    <ol class="flow">
+      <li><b>Служебка</b><span>Word, PDF или скан загружают в 1С</span></li>
+      <li><b>AI распознаёт</b><span>ФИО, должность, даты, оклад</span></li>
+      <li><b>Контрольные точки</b><span>штатное, остатки, дубли, пересечения</span></li>
+      <li><b>Черновик</b><span>приказ и договор заполнены, ошибки подсвечены</span></li>
+      <li class="human"><b>Кадровик проводит</b><span>проверил и нажал «Провести»</span></li>
+      <li><b>Печать KZ / RU</b><span>по шаблону компании</span></li>
+      <li><b>Табель</b><span>данные уходят без перепечатки</span></li>
+    </ol>
+    <div class="tbl-wrap">
+      <table>
+        <thead><tr><th>Было</th><th>Стало</th></tr></thead>
+        <tbody>
+          <tr><td class="before">Данные вводятся в приказ, договор и допсоглашение отдельно</td><td class="after">Одна загрузка — весь пакет документов сформирован</td></tr>
+          <tr><td class="before">Договор собирают из прошлого файла</td><td class="after">Договор строго из базы; без обязательных условий ТК РК не печатается</td></tr>
+          <tr><td class="before">Соответствие штатному проверяют вручную или не проверяют</td><td class="after">Приказ сверяется с вакантной ставкой и вилкой оклада</td></tr>
+          <tr><td class="before">Допсоглашение после перевода зависит от памяти</td><td class="after">Допсоглашение создаётся из приказа, приходит напоминание про ЕСУТД</td></tr>
+          <tr><td class="before">Отпуск сверх остатка находят после подписи</td><td class="after">Без подтверждения ответственного документ не проводится</td></tr>
+          <tr><td class="before">Расхождения табеля ищут при закрытии месяца</td><td class="after">Расхождения видны в отчёте заранее</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <section>
+    <div class="sec-head">
+      <div class="label">Проверьте себя за минуту</div>
+      <h2>Где контроль держится на памяти в вашем отделе</h2>
+    </div>
+    <div class="quiz">
+      <ul class="quiz-list">
+        <li><label for="q1"><input type="checkbox" id="q1" class="q">Данные сотрудника вводятся в 1С и документы больше одного раза</label></li>
+        <li><label for="q2"><input type="checkbox" id="q2" class="q">Трудовой договор делают из прошлого файла Word</label></li>
+        <li><label for="q3"><input type="checkbox" id="q3" class="q">Нет уверенности, что на каждый перевод есть подписанное допсоглашение</label></li>
+        <li><label for="q4"><input type="checkbox" id="q4" class="q">Приказ на двух языках доделывают вручную</label></li>
+        <li><label for="q5"><input type="checkbox" id="q5" class="q">Закрытие месяца не обходится без сверки табеля с приказами</label></li>
+        <li><label for="q6"><input type="checkbox" id="q6" class="q">Если ключевой кадровик заболеет, работа отдела встанет</label></li>
+      </ul>
+      <div class="quiz-res" id="quizRes" data-level="lo" aria-live="polite">
+        <div class="quiz-score"><span id="qScore">0</span> <small>из 6</small></div>
+        <div class="meter"><i id="qBar"></i></div>
+        <b id="qTitle">Отметьте пункты слева</b>
+        <p class="note" id="qText">Результат появится сразу.</p>
+        <a class="btn btn-primary btn-sm" href="#try" id="qCta" hidden>Посмотреть, как это исправить</a>
+      </div>
+    </div>
+  
+  </section>
+
+  <section>
+    <div class="sec-head">
+      <div class="label">Экономический эффект</div>
+      <h2>Время — только часть эффекта</h2>
+    </div>
+    <div class="calc">
+      <div class="calc-in">
+        <div>
+          <label for="ev">Кадровых событий в неделю <output id="evOut">15</output></label>
+          <input type="range" id="ev" min="3" max="80" value="15">
+        </div>
+        <div>
+          <label for="mn">Минут на одно событие сейчас <output id="mnOut">25</output></label>
+          <input type="range" id="mn" min="10" max="60" step="5" value="25">
+        </div>
+        <p class="note">Событие — это приказ плюс трудовой договор или допсоглашение. С системой на него уходит около 5 минут. Цифры примерные, на аудите посчитаем на ваших данных.</p>
+      </div>
+      <div class="calc-out">
+        <div class="label">Отдел экономит в неделю</div>
+        <div class="big" id="hWeek">5 ч 00 мин</div>
+        <div class="row"><span>В месяц</span><b id="hMonth">21 ч</b></div>
+        <div class="row"><span>В год, рабочих дней</span><b id="dYear">33</b></div>
+        <p class="note">Это время на адаптацию новичков, оценку и работу с людьми — то, ради чего приходят в HR.</p>
+      </div>
+    </div>
+  
+    <div class="feat four">
+      <div><h3>Время</h3><p>Ручной ввод и перепечатка сокращаются до проверки и проведения.</p></div>
+      <div><h3>Исправления</h3><p>Меньше пересчётов, сторно и исправлений задним числом.</p></div>
+      <div><h3>Операционный риск</h3><p>Несоответствия видны до проверки трудовой инспекции, а не во время неё.</p></div>
+      <div><h3>Ручной контроль</h3><p>Руководителю не нужно выборочно перепроверять документы — есть отчёт.</p></div>
+    </div>
+  </section>
+
+  <section id="price">
+    <div class="sec-head">
+      <div class="label">Что именно внедряем</div>
+      <h2>Поэтапно: сначала аудит на ваших данных, потом только утверждённые модули</h2>
+    </div>
+    <div class="plans">
+      <div class="plan">
+        <div class="tag">Начало</div>
+        <h3>Аудит КДП</h3>
+        <p>Проверка копии базы по контрольным точкам, отчёт о состоянии кадровой базы, план и расчёт эффекта.</p>
+        <div><div class="price">150 000 ₸</div><div class="term">3–5 дней · засчитывается в проект</div></div>
+      </div>
+      <div class="plan">
+        <div class="tag">Базовый</div>
+        <h3>Приём, отпуск, увольнение</h3>
+        <p>Контрольные точки, автоматические приказы и трудовой договор KZ / RU.</p>
+        <div><div class="price">от 500 000 ₸</div><div class="term">3–4 недели</div></div>
+      </div>
+      <div class="plan pick">
+        <div class="tag">Оптимально</div>
+        <h3>Расширенный</h3>
+        <p>Все кадровые события и допсоглашения, штатное, отпуска, табели, вахта, ЕСУТД, отчёт «Здоровье кадровой базы».</p>
+        <div><div class="price">от 900 000 ₸</div><div class="term">6–8 недель</div></div>
+      </div>
+      <div class="plan">
+        <div class="tag">Под ключ</div>
+        <h3>+ заявки руководителей</h3>
+        <p>Расширенный пакет и заявки через Битрикс24 или Telegram-бот с передачей в 1С.</p>
+        <div><div class="price">от 3 000 000 ₸</div><div class="term">8–10 недель</div></div>
+      </div>
+    </div>
+    <p class="note">Сопровождение — от 75 000 ₸ в месяц: обновления 1С и ТК РК, новые контрольные точки, консультации. В каждый пакет входят расширение 1С в собственность компании, шаблоны документов на двух языках, регламент контрольных точек, обучение отдела и 30 дней поддержки.</p>
+    <div class="offer">
+      <span><b>Первым 5 компаниям — скидка 30%</b><br>на любой пакет в обмен на отзыв после запуска</span>
+      <a class="btn btn-ghost btn-sm" style="border-color:var(--paper);color:var(--paper)" href="#contact">Занять место</a>
+    </div>
+  </section>
+
+  <section>
+    <div class="sec-head">
+      <div class="label">Безопасность внедрения</div>
+      <h2>Без риска для вашей базы и ваших данных</h2>
+    </div>
+    <ul class="safe">
+      <li><span class="tick">✓</span><span><b>Копия базы.</b> В рабочую 1С — только после вашего согласования.</span></li>
+      <li><span class="tick">✓</span><span><b>Расширение, а не переделка.</b> Типовая конфигурация остаётся на поддержке. ЗУП и Бухгалтерия ПРОФ и КОРП.</span></li>
+      <li><span class="tick">✓</span><span><b>Фиксированная цена.</b> Стоимость и срок не растут по ходу работ.</span></li>
+      <li><span class="tick">✓</span><span><b>Персональные данные.</b> NDA, ИИН и паспортные данные маскируются перед распознаванием.</span></li>
+      <li><span class="tick">✓</span><span><b>Решение за человеком.</b> Система готовит и проверяет, проводит специалист.</span></li>
+      <li><span class="tick">✓</span><span><b>Гарантия аудита.</b> Не нашли ни одного несоответствия — аудит бесплатно.</span></li>
+    </ul>
+  </section>
+
+  <section id="contact">
+    <div class="final">
+      <div class="label">Следующий шаг</div>
+      <h2>Бесплатная экспресс-диагностика КДП за 30 минут</h2>
+      <p class="lead">Онлайн или у вас в офисе. Если видим потенциал — проводим аудит копии базы и показываем несоответствия уже на ваших данных. Если не видим — так и скажем.</p>
+      <ol class="steps">
+        <li><b>Ручные операции</b>Где в процессе повторный ввод</li>
+        <li><b>Контрольные риски</b>Где ошибки находят слишком поздно</li>
+        <li><b>Что автоматизировать</b>В вашей конфигурации 1С</li>
+        <li><b>Что не трогать</b>Что имеет смысл оставить как есть</li>
+      </ol>
+      <div class="phone">
+        <span class="phone-num" id="ph">8 705 345 84 58</span>
+        <button class="btn btn-ghost btn-sm" id="copy" type="button">Скопировать номер</button>
+        <a class="btn btn-primary btn-sm" href="https://wa.me/77053458458" target="_blank" rel="noopener">Записаться в WhatsApp</a>
+      </div>
+      <p class="note">kamchulya@gmail.com · г. Астана, ул. Калдаякова, 11</p>
+    </div>
+  </section>
+
+  <footer>
+    <span>ИП Алмагамбетова К. · КДП-Контроль</span>
+    <span>Система контроля кадровых процессов в 1С</span>
+  </footer>
+</div>
+
+<script>
+(function(){
+  /* calculator */
+  var ev=document.getElementById('ev'), mn=document.getElementById('mn');
+  function upd(){
+    var e=+ev.value, m=+mn.value, saved=Math.max(0,(m-5)*e);
+    document.getElementById('evOut').textContent=e;
+    document.getElementById('mnOut').textContent=m;
+    var h=Math.floor(saved/60), r=Math.round(saved%60);
+    document.getElementById('hWeek').textContent=h+' ч '+String(r).padStart(2,'0')+' мин';
+    document.getElementById('hMonth').textContent=Math.round(saved*4.33/60)+' ч';
+    document.getElementById('dYear').textContent=Math.round(saved*52/60/8);
+  }
+  ev.addEventListener('input',upd); mn.addEventListener('input',upd); upd();
+
+  /* copy */
+  var btn=document.getElementById('copy');
+  btn.addEventListener('click',function(){
+    function sel(){var r=document.createRange();r.selectNodeContents(document.getElementById('ph'));var s=getSelection();s.removeAllRanges();s.addRange(r);btn.textContent='Выделено — нажмите Ctrl+C';}
+    try{navigator.clipboard.writeText('87053458458').then(function(){btn.textContent='Скопировано';},sel);}catch(e){sel();}
+  });
+
+  /* self-check */
+  var qs=[].slice.call(document.querySelectorAll('.q'));
+  function quiz(){
+    var n=qs.filter(function(q){return q.checked}).length, res=document.getElementById('quizRes');
+    document.getElementById('qScore').textContent=n;
+    document.getElementById('qBar').style.width=(n/6*100)+'%';
+    var t,x,l;
+    if(n===0){t='Отметьте пункты слева';x='Результат появится сразу.';l='lo';}
+    else if(n===1){t='Почти порядок';x='Один слабый участок — и именно там случаются ошибки, которые находят при проверке.';l='lo';}
+    else if(n<=3){t='Отдел теряет часы каждую неделю';x='Ручной ввод уже обходится вам в перепечатки и сверки. Это исправляется за несколько недель.';l='mid';}
+    else{t='Высокий риск ошибок в КДП';x='Большая часть контроля держится на памяти людей. Система снимет эту нагрузку с первого месяца.';l='hi';}
+    document.getElementById('qTitle').textContent=t;
+    document.getElementById('qText').textContent=x;
+    res.setAttribute('data-level',l);
+    document.getElementById('qCta').hidden=n<2;
+  }
+  qs.forEach(function(q){q.addEventListener('change',quiz)});
+
+  /* demo */
+  var S={
+    hire:{
+      head:'Служебная записка',
+      text:'Директору ТОО «Пример»<br>от начальника ПТО Жумабаева Е.К.<p>Прошу принять на работу <mark>Ахметову Динару Сериковну</mark> на должность <mark>инженера ПТО</mark> с <mark>03.11.2026</mark> с окладом <mark>480 000 тенге</mark>, испытательный срок <mark>3 месяца</mark>.</p>',
+      fields:[['Сотрудник','Ахметова Динара Сериковна'],['Событие','Приём на работу'],['Подразделение','ПТО'],['Должность','Инженер'],['Дата','03.11.2026'],['Оклад','480 000 ₸'],['Испытательный срок','3 месяца']],
+      checks:[['ok','Вакантная ставка в штатном: свободно 1 из 2'],['ok','Оклад в вилке должности: 420 000 – 520 000 ₸'],['ok','Физлицо с таким ИИН в базе не найдено — дублей нет'],['ok','Обязательные условия трудового договора заполнены']],
+      docs:['ru','kz','td']
+    },
+    vac:{
+      head:'Заявление',
+      text:'Директору ТОО «Пример»<br>от мастера участка Иванова С.П.<p>Прошу предоставить мне <mark>ежегодный оплачиваемый трудовой отпуск</mark> с <mark>03.11.2026</mark> продолжительностью <mark>24 календарных дня</mark>.</p>',
+      fields:[['Сотрудник','Иванов Сергей Петрович'],['Событие','Ежегодный оплачиваемый отпуск'],['Должность','Мастер участка'],['Период','03.11.2026 – 26.11.2026'],['Дней','24']],
+      checks:[['ok','Сотрудник работает, дублей приказа нет'],['ok','Не пересекается с командировками и больничными'],['ok','Отпуск стоит в графике на ноябрь'],['warn','Остаток за рабочий год — 18 дней, запрошено 24']],
+      fix:true,
+      docs:['ru','kz']
+    },
+    move:{
+      head:'Служебная записка',
+      text:'Начальнику отдела кадров<br>от начальника цеха Сейткали Б.М.<p>Прошу перевести <mark>Касымова Армана Нурлановича</mark>, оператора ДНС, на должность <mark>старшего оператора ДНС</mark> с <mark>01.11.2026</mark> с окладом <mark>560 000 тенге</mark>.</p>',
+      fields:[['Сотрудник','Касымов Арман Нурланович'],['Событие','Перевод'],['Было','Оператор ДНС, 470 000 ₸'],['Стало','Старший оператор ДНС, 560 000 ₸'],['Дата','01.11.2026']],
+      checks:[['ok','Вакантная ставка старшего оператора есть'],['ok','Дата перевода позже даты приёма'],['ok','Меняются должность и оклад — допсоглашение сформировано'],['warn','Напоминание: внести допсоглашение в ЕСУТД']],
+      docs:['ru','kz','ds']
+    }
+  };
+  var cur='hire', vacDays=24, vacFixed=null, timer=null;
+  var paper=document.getElementById('paper'), body=document.getElementById('stageBody'), steps=[].slice.call(document.querySelectorAll('#stepsRun li'));
+
+  function showPaper(parsed){
+    paper.className='paper'+(parsed?' parsed':'');
+    paper.innerHTML='<div class="label">'+S[cur].head+' · пример</div><p>'+S[cur].text+'</p>';
+  }
+  function resetSteps(){steps.forEach(function(s){s.className=''});document.getElementById('timer').textContent='';}
+  [].slice.call(document.querySelectorAll('.sample')).forEach(function(b){
+    b.addEventListener('click',function(){
+      document.querySelectorAll('.sample').forEach(function(x){x.setAttribute('aria-pressed','false')});
+      b.setAttribute('aria-pressed','true'); cur=b.getAttribute('data-k'); vacDays=24; vacFixed=null;
+      clearTimeout(timer); resetSteps(); showPaper(false);
+      body.innerHTML='<div class="idle"><b>Здесь появится результат</b><span>Нажмите «Загрузить в 1С»</span></div>';
+    });
+  });
+
+  function docText(k){
+    if(cur==='hire'){
+      if(k==='ru')return '<h4>ПРИКАЗ № 112-к</h4><div class="meta"><span>г. Астана</span><span>03.11.2026</span></div><p><b>О приёме на работу</b></p><p>Принять Ахметову Динару Сериковну на должность инженера производственно-технического отдела с 03.11.2026 с должностным окладом 480 000 (четыреста восемьдесят тысяч) тенге, с испытательным сроком 3 (три) месяца.</p><p>Основание: служебная записка начальника ПТО Жумабаева Е.К., заявление работника, трудовой договор № 112 от 03.11.2026.</p><div class="sign"><span>Директор</span><span>_____________</span></div>';
+      if(k==='kz')return '<h4>№ 112-к БҰЙРЫҚ</h4><div class="meta"><span>Астана қ.</span><span>03.11.2026</span></div><p><b>Жұмысқа қабылдау туралы</b></p><p>Ахметова Динара Серікқызы 2026 жылғы 3 қарашадан бастап өндірістік-техникалық бөлімнің инженері лауазымына 480 000 (төрт жүз сексен мың) теңге лауазымдық жалақымен, 3 (үш) ай сынақ мерзімімен жұмысқа қабылдансын.</p><p>Негіздеме: ӨТБ бастығы Е.К. Жұмабаевтың қызметтік жазбасы, қызметкердің өтініші, 03.11.2026 ж. № 112 еңбек шарты.</p><div class="sign"><span>Директор</span><span>_____________</span></div>';
+      return '<h4>ТРУДОВОЙ ДОГОВОР № 112</h4><div class="meta"><span>г. Астана</span><span>03.11.2026</span></div><p><b>1. Предмет договора.</b> Работник Ахметова Динара Сериковна принимается на должность инженера производственно-технического отдела. Дата начала работы — 03.11.2026.</p><p><b>2. Испытательный срок</b> — 3 (три) месяца.</p><p><b>4. Оплата труда.</b> Должностной оклад — 480 000 тенге в месяц.</p><p class="note">Фрагмент. Полный текст — по шаблону вашей компании, на казахском и русском.</p>';
+    }
+    if(cur==='vac'){
+      var days=vacFixed===null?24:vacDays, end=days===18?'20.11.2026':'26.11.2026';
+      var endKz=days===18?'20 қарашаны':'26 қарашаны';
+      if(k==='ru')return '<h4>ПРИКАЗ № 245-о</h4><div class="meta"><span>г. Астана</span><span>27.10.2026</span></div><p><b>О предоставлении трудового отпуска</b></p><p>Предоставить Иванову Сергею Петровичу, мастеру участка, ежегодный оплачиваемый трудовой отпуск за период работы с 15.03.2025 по 14.03.2026 продолжительностью '+days+' календарных дней с 03.11.2026 по '+end+'.</p><p>Основание: заявление работника.</p><div class="sign"><span>Директор</span><span>_____________</span></div>';
+      return '<h4>№ 245-о БҰЙРЫҚ</h4><div class="meta"><span>Астана қ.</span><span>27.10.2026</span></div><p><b>Еңбек демалысын беру туралы</b></p><p>Учаске шебері Сергей Петрович Ивановқа 2025 жылғы 15 наурыздан 2026 жылғы 14 наурызға дейінгі жұмыс кезеңі үшін 2026 жылғы 3 қарашадан '+endKz+' қоса алғанда '+days+' күнтізбелік күн ұзақтығымен жыл сайынғы ақы төленетін еңбек демалысы берілсін.</p><p>Негіздеме: қызметкердің өтініші.</p><div class="sign"><span>Директор</span><span>_____________</span></div>';
+    }
+    if(k==='ru')return '<h4>ПРИКАЗ № 118-к</h4><div class="meta"><span>г. Астана</span><span>01.11.2026</span></div><p><b>О переводе на другую работу</b></p><p>Перевести Касымова Армана Нурлановича с должности оператора ДНС на должность старшего оператора ДНС с 01.11.2026 с должностным окладом 560 000 (пятьсот шестьдесят тысяч) тенге.</p><p>Основание: служебная записка начальника цеха Сейткали Б.М., дополнительное соглашение № 3 к трудовому договору № 57.</p><div class="sign"><span>Директор</span><span>_____________</span></div>';
+    if(k==='kz')return '<h4>№ 118-к БҰЙРЫҚ</h4><div class="meta"><span>Астана қ.</span><span>01.11.2026</span></div><p><b>Басқа жұмысқа ауыстыру туралы</b></p><p>Арман Нұрланұлы Қасымов 2026 жылғы 1 қарашадан бастап ДНС операторы лауазымынан ДНС аға операторы лауазымына 560 000 (бес жүз алпыс мың) теңге лауазымдық жалақымен ауыстырылсын.</p><p>Негіздеме: цех бастығы Б.М. Сейтқалидың қызметтік жазбасы, № 57 еңбек шартына № 3 қосымша келісім.</p><div class="sign"><span>Директор</span><span>_____________</span></div>';
+    return '<h4>ДОПОЛНИТЕЛЬНОЕ СОГЛАШЕНИЕ № 3</h4><p style="text-align:center">к трудовому договору № 57 от 12.04.2023</p><div class="meta"><span>г. Астана</span><span>01.11.2026</span></div><p>1. Пункт 1.1 изложить в следующей редакции: «Работник принимается на должность старшего оператора ДНС».</p><p>2. Пункт 4.1 изложить в следующей редакции: «Должностной оклад — 560 000 тенге в месяц».</p><p>3. Соглашение вступает в силу с 01.11.2026. Остальные условия договора не изменяются.</p><p class="note">После подписания 1С напомнит внести соглашение в ЕСУТД.</p>';
+  }
+  var names={ru:'Приказ RU',kz:'Бұйрық KZ',td:'Трудовой договор',ds:'Допсоглашение'};
+
+  function render(){
+    var c=S[cur], warnOpen=cur==='vac'&&vacFixed===null;
+    var f='<dl class="res-fields">'+c.fields.map(function(p){
+      var v=p[1]; if(cur==='vac'&&vacFixed!==null){if(p[0]==='Дней')v=String(vacDays);if(p[0]==='Период')v=vacDays===18?'03.11.2026 – 20.11.2026':v;}
+      return '<dt>'+p[0]+'</dt><dd>'+v+'</dd>'}).join('')+'</dl>';
+    var ch='<ul class="res-checks">'+c.checks.map(function(p){
+      var cls=p[0], txt=p[1];
+      if(cur==='vac'&&cls==='warn'&&vacFixed!==null){cls='ok';txt=vacFixed==='fix'?'Количество дней исправлено на 18 — в пределах остатка':'Проведено с подтверждением ответственного (комментарий сохранён)';}
+      return '<li><span class="'+cls+'">'+(cls==='ok'?'✓':'!')+'</span><span>'+txt+'</span></li>'}).join('')+'</ul>';
+    if(warnOpen)ch+='<div class="fix"><button class="btn btn-primary btn-sm" type="button" data-fix="fix">Исправить на 18 дней</button><button class="btn btn-ghost btn-sm" type="button" data-fix="ok">Провести с подтверждением</button></div>';
+    var tabs='<div class="tabs" role="tablist">'+c.docs.map(function(d,i){return '<button class="tab" role="tab" type="button" data-d="'+d+'" aria-selected="'+(i===0)+'">'+names[d]+'</button>'}).join('')+'</div>';
+    var status=warnOpen?'<div class="done-line"><span class="warn">Документ не проведён: нужно решение кадровика</span></div>':'<div class="done-line"><span class="seal">ПРОВЕРЕНО</span><span>Документы готовы к печати и подписи</span></div>';
+    body.innerHTML='<div class="res-grid"><div><div class="box-title">Распознано из документа</div>'+f+'</div><div><div class="box-title">Проверки 1С</div>'+ch+'</div></div>'+status+'<div>'+tabs+'<div class="docview" id="docview">'+docText(c.docs[0])+'</div></div>';
+    body.querySelectorAll('.tab').forEach(function(t){t.addEventListener('click',function(){
+      body.querySelectorAll('.tab').forEach(function(x){x.setAttribute('aria-selected','false')});
+      t.setAttribute('aria-selected','true'); document.getElementById('docview').innerHTML=docText(t.getAttribute('data-d'));
+    })});
+    body.querySelectorAll('[data-fix]').forEach(function(b){b.addEventListener('click',function(){
+      vacFixed=b.getAttribute('data-fix'); vacDays=vacFixed==='fix'?18:24; render();
+    })});
+  }
+
+  document.getElementById('run').addEventListener('click',function(){
+    clearTimeout(timer); resetSteps(); vacDays=24; vacFixed=null; showPaper(false);
+    var reduce=window.matchMedia&&matchMedia('(prefers-reduced-motion: reduce)').matches, dt=reduce?0:650, t0=Date.now();
+    body.innerHTML='<div class="idle"><b>Обработка документа…</b><span>Распознаём данные и сверяем с 1С</span></div>';
+    var i=0;
+    (function step(){
+      if(i>0)steps[i-1].className='done';
+      if(i===1)showPaper(true);
+      if(i<steps.length){steps[i].className='on';i++;timer=setTimeout(step,dt);}
+      else{document.getElementById('timer').textContent='готово';render();}
+    })();
+  });
+  showPaper(false);
+})();
+</script>
+
+</body>
+</html>
